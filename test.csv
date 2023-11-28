@@ -1,0 +1,10 @@
+﻿idPat,dateScreening,indexLit,age,typeProjet,depistage,risqueDenutrition,reeval,priseCharge,evalNutri,intervention1,intervention2,intervention3,intervention4,suiviNutri
+3108847,190723,,123,,,,,,ondervoeding/dénutrition,nok,nok,nok,nok,
+7181856,190723,D,65,"kankerplan/Plan Cancer","ja/oui < 48h",ja/oui,"geen herscreening/ pas de réévaluation",diëtist/diététicien,ondervoeding/dénutrition,2,2,2,2,"Geen FU/pas de suivi"
+0819383,200723,"Dagopname/Hôpital de jour",76,"Nutritionteam/Equipes nutritionnelles","ja/oui < 48h",ja/oui,"ja met risico/ oui avec risque",diëtist/diététicien,"afwezigheid van ondervoeding en overgewicht/absence de dénutrition et de surcharge pondérale ",1,1,1,1,Ja/oui
+1236885,200723,"Dagopname/Hôpital de jour",74,"Nutritionteam/Equipes nutritionnelles","ja/oui < 48h",ja/oui,"ja met risico/ oui avec risque",diëtist/diététicien,"afwezigheid van ondervoeding en overgewicht/absence de dénutrition et de surcharge pondérale ",1,1,1,1,Ja/oui
+1477151,200723,G,84,"Nutritionteam/Equipes nutritionnelles","ja/oui < 48h",ja/oui,"ja met risico/ oui avec risque",diëtist/diététicien,"ernstige ondervoeding/dénutrition sévère",2,2,2,2,Ja/oui
+2312321,240723,"Dagopname/Hôpital de jour",73,"Nutritionteam/Equipes nutritionnelles","ja/oui > 48h",nee/non,"ja zonder risico/ oui sans risque",diëtist/diététicien,"afwezigheid van ondervoeding en overgewicht/absence de dénutrition et de surcharge pondérale ",1,1,1,1,Ja/oui
+7459233,240723,D,55,"kankerplan/Plan Cancer","ja/oui < 48h",ja/oui,"ja met risico/ oui avec risque",diëtist/diététicien,ondervoeding/dénutrition,2,2,2,2,Ja/oui
+2007692,240723,"Dagopname/Hôpital de jour",75,,"ja/oui < 48h",nee/non,"geen herscreening/ pas de réévaluation",diëtist/diététicien,"afwezigheid van ondervoeding en overgewicht/absence de dénutrition et de surcharge pondérale ",1,1,1,1,"Geen FU/pas de suivi"
+0613115,240723,D,68,"Nutritionteam/Equipes nutritionnelles",,ja/oui,,diëtist/diététicien,"ernstige ondervoeding/dénutrition sévère",1,1,1,1,"Geen FU/pas de suivi"
