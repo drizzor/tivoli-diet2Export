@@ -1,9 +1,48 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diet Export</title>
+</head>
+<body>
+    <form action="index.php" method="POST" enctype="multipart/form-data">
+        <label for="year">Année souhaitée:</label>
+        <input type="text" name="year" id="year" value="<?= date('Y') ?>"><br>
+
+        <label for="uploadCSV">Upload du CSV:</label>
+        <input type="file" name="uploadCSV" id="uploadCSV"><br>
+
+        <button type="submit">Générer le CSV</button>
+    </form>
+</body>
+</html>
+
 <?php
+require_once('helpers/Uploader.php');
+
 $json = $dataToExport = [];
 
-$json = getAllSpecnoteId();
-$dataToExport = filterData($json);
-createCSV($dataToExport);
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // isset($_POST['year']) and !empty($_POST['year'])
+    // isset($_POST['submit']))
+    // $input = (int)$_POST['year'];
+    // echo is_numeric($input);
+
+    // Gestion fichier uploadé
+        $file = new Uploader();
+        $file->setDir("csv/specnoteid/");
+        $file->setMaxSize(.5);
+        $file->setExtensions(array('csv'));
+
+        if($file->uploadFile('uploadCSV')) {
+            $json = getAllSpecnoteId($file->getUploadName());
+            $dataToExport = filterData($json);
+            print_r($json);
+            // createCSV($dataToExport);
+        } 
+        else echo $file->getMessage();
+} 
 
 /**
  * Récupère le texte des CHK, RADLIST, COMBO,...
@@ -81,11 +120,11 @@ function getMyText(string $comboName, $value) : string {
 }
 
 /**
- * Récupère les specnote ID mentionné dans le CSV
+ * Récupère sans distinction les specnote ID mentionné dans le CSV
  */
-function getAllSpecnoteId(string $source = 'csv') : array {
+function getAllSpecnoteId(string $target) : array {
     $specnoteId = $json = [];
-    $lines = file('specnote.csv', FILE_IGNORE_NEW_LINES);
+    $lines = file("csv/specnoteid/" . $target, FILE_IGNORE_NEW_LINES);
 
     foreach ($lines as $key => $value)
     {
@@ -158,6 +197,7 @@ function showData(array $data) : void {
 
 /**
  * Formate la date : 240823
+ * @param $date au format 2023-07-19 11:51:03
  */
 function formatDate(string $date) : string {
     $date = substr($date, 0, strpos($date, " "));
@@ -168,20 +208,22 @@ function formatDate(string $date) : string {
 
 /**
  * Vérifie si l'année correspond à celle souhaitée
+ * @param $year
  */
-function checkYear(string $date) : bool {
-    $date = explode("-", $date);
+function checkYear(string $year) : bool {
+    $year = explode("-", $year);
 
-    if($date[0] == '2023') return true;
+    if($year[0] == '2023') return true;
 
     return false;
 }
 
 /**
  * Créer le CSV avec les données à copier/coller dans le classeur Excel des diet
+ * @param $data tableau contenant le données à récupérer dans le CSV
  */
-function createCSV($data) {
-    $fp = fopen('test.csv', "w");
+function createCSV(array $data) : void {
+    $fp = fopen("csv/export/" . getRandomName(), "w");
     // convert special char éèë,....
     fputs($fp, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
@@ -210,5 +252,12 @@ function createCSV($data) {
     }
 
     fclose($fp);
-    //https://mehulgohil.com/blog/export-data-to-csv-using-php/
+}
+
+/**
+ * Genère un nom aléatoire pour la création des fichiers CSV (éviter doublon)
+ * @param $ex -> Extension souhaitée par défaut CSV
+ */
+function getRandomName(string $ex = "csv") : string {
+    return strtotime(date('Y-m-d H:i:s')).rand(1111,9999).rand(11,99).rand(111,999) . "." . $ex;
 }
