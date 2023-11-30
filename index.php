@@ -24,31 +24,31 @@ require_once('helpers/Uploader.php');
 $json = $dataToExport = [];
 
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // isset($_POST['year']) and !empty($_POST['year'])
-    // isset($_POST['submit']))
-    // $input = (int)$_POST['year'];
-    // echo is_numeric($input);
 
-    // Gestion fichier uploadé
-        $file = new Uploader();
-        $file->setDir("csv/specnoteid/");
-        $file->setMaxSize(.5);
-        $file->setExtensions(array('csv'));
+    $file = new Uploader();
+    $file->setDir("csv/specnoteid/");
+    $file->setMaxSize(.5);
+    $file->setExtensions(array('csv'));
 
-        if($file->uploadFile('uploadCSV')) {
-            $json = getAllSpecnoteId($file->getUploadName());
-            $dataToExport = filterData($json);
-            print_r($json);
-            // createCSV($dataToExport);
-        } 
-        else echo $file->getMessage();
+    if($file->uploadFile('uploadCSV')) {
+        $json = getAllSpecnoteId($file->getUploadName());
+        $dataToExport = filterData($json);
+
+        if(!empty($dataToExport)) createCSV($dataToExport);
+        else echo "Aucune données trouvées pour l'année : ".$_POST['year'];
+        $file->deleteUploaded();
+    } 
+    else echo $file->getMessage();
+
 } 
 
 /**
  * Récupère le texte des CHK, RADLIST, COMBO,...
+ * @param $fieldName nom du champ dont les données doivent-être récupérée
+ * @param $value la valeur du champ qui doit être traduit
  */
-function getMyText(string $comboName, $value) : string {
-    if($comboName == 'loc_COMBO') {
+function getMyText(string $fieldName, $value) : string {
+    if($fieldName == 'loc_COMBO') {
         if ($value == 1) return 'C';
         if ($value == 2) return 'D';
         if ($value == 3) return 'G';
@@ -65,33 +65,33 @@ function getMyText(string $comboName, $value) : string {
         return '';
     }
 
-    if($comboName == 'projet_RADLIST') {
+    if($fieldName == 'projet_RADLIST') {
         if ($value == 1) return 'Nutritionteam/Equipes nutritionnelles';
         if ($value == 2) return 'kankerplan/Plan Cancer';
         return '';
     }
 
-    if($comboName == 'delai_RADLIST') {
+    if($fieldName == 'delai_RADLIST') {
         if ($value == 1) return 'nee/non';
         if ($value == 2) return 'ja/oui < 48h';
         if ($value == 3) return 'ja/oui > 48h';
         return '';
     }
         
-    if($comboName == 'risque_RADLIST') {
+    if($fieldName == 'risque_RADLIST') {
         if ($value == 1) return 'ja/oui';
         if ($value == 2) return 'nee/non';
         return '';
     }
 
-    if($comboName == 'evalnutri_RADLIST') {
+    if($fieldName == 'evalnutri_RADLIST') {
         if ($value == 1) return 'geen herscreening/ pas de réévaluation';
         if ($value == 2) return 'ja met risico/ oui avec risque';
         if ($value == 3) return 'ja zonder risico/ oui sans risque';
         return '';
     }
 
-    if($comboName == 'prise_RADLIST') {
+    if($fieldName == 'prise_RADLIST') {
         if ($value == 1) return "geen nutritionele interventie uitgevoerd/pas d'intervention nutritionnelle réalisée";
         if ($value == 2) return 'diëtist/diététicien';
         if ($value == 3) return 'arts/médecin';
@@ -100,7 +100,7 @@ function getMyText(string $comboName, $value) : string {
         return '';
     }
 
-    if($comboName == 'eval_COMBO') {
+    if($fieldName == 'eval_COMBO') {
         if ($value == 1) return 'afwezigheid van ondervoeding en overgewicht/absence de dénutrition et de surcharge pondérale ';
         if ($value == 2) return 'ernstige ondervoeding/dénutrition sévère';
         if ($value == 3) return 'ondervoeding/dénutrition';
@@ -112,18 +112,27 @@ function getMyText(string $comboName, $value) : string {
         return '';
     }
 
-    if($comboName == 'suivi_RADLIST') {
+    if($fieldName == 'suivi_RADLIST') {
         if ($value == 1) return 'Ja/oui';
         if ($value == 2) return 'Geen FU/pas de suivi';
+        return '';
+    }
+
+    if($fieldName == 'interv_CHKLIST') {
+        if ($value == 1) return 'persoonlijk advies/Conseils personnalisés';
+        if ($value == 2) return 'ONS/Compléments nutritionnels oraux';
+        if ($value == 3) return 'EN/Nutrition entérale';
+        if ($value == 4) return 'PN/Nutrition parentérale';
         return '';
     }
 }
 
 /**
- * Récupère sans distinction les specnote ID mentionné dans le CSV
+ * Récupère les informations de la note via le specnoteid
+ * @param $target contient le nom du fichier uploadé par l'utilisateur
  */
 function getAllSpecnoteId(string $target) : array {
-    $specnoteId = $json = [];
+    $specnoteId = $json  = [];
     $lines = file("csv/specnoteid/" . $target, FILE_IGNORE_NEW_LINES);
 
     foreach ($lines as $key => $value)
@@ -131,9 +140,12 @@ function getAllSpecnoteId(string $target) : array {
         $specnoteId[$key] = str_getcsv($value);
     }
 
-    for ($i=1; $i < count($specnoteId); $i++) { 
-        $json[$i-1] = file_get_contents('http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/' . $specnoteId[$i][0]);
-        $json[$i-1] = json_decode($json[$i-1]);
+    for ($i=0; $i < count($specnoteId); $i++) { 
+        $json[$i] = file_get_contents('http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/' . $specnoteId[$i][0]);        
+        $json[$i] = json_decode($json[$i]);
+
+        // Si il ne s'agit pas d'un specnoteid tag en erreur
+        if(!isset($json[$i]->noteInfosWs->specNoteId)) $json[$i] = "error";        
     }
 
     return $json;
@@ -141,58 +153,42 @@ function getAllSpecnoteId(string $target) : array {
 
 /**
  * Filtre les données afin des les préparer telle qu'elles doivent apparaitre pour l'extraction
+ * @param $json Passe le json avec l'ensemble des données non filtrée
  */
 function filterData(array $json) : array {
     $dataToExport = [];
 
     for ($i=0; $i < count($json); $i++) { 
-        if(!checkYear($json[$i]->noteInfosWs->dateCreation)) continue;
-    
-        $dataToExport[$i] = [
-            "idPat" => (isset($json[$i]->patInfosWs->patientNDOSM)) ? $json[$i]->patInfosWs->patientNDOSM : '',
-            "dateScreening" => (isset($json[$i]->noteInfosWs->dateCreation) ? formatDate($json[$i]->noteInfosWs->dateCreation) : ''),
-            "indexLit" => (isset($json[$i]->loc_COMBO) ? getMyText('loc_COMBO', $json[$i]->loc_COMBO) : ''),
-            "age" => (isset($json[$i]->age_TXT) ? $json[$i]->age_TXT : ''),
-            "typeProjet" => (isset($json[$i]->projet_RADLIST) ? getMyText('projet_RADLIST', $json[$i]->projet_RADLIST) : ''),
-            "depistage" => (isset($json[$i]->delai_RADLIST) ? getMyText('delai_RADLIST', $json[$i]->delai_RADLIST) : ''),
-            "risqueDenutrition" => (isset($json[$i]->risque_RADLIST) ? getMyText('risque_RADLIST', $json[$i]->risque_RADLIST) : ''),
-            "reeval" => (isset($json[$i]->evalnutri_RADLIST) ? getMyText('evalnutri_RADLIST', $json[$i]->evalnutri_RADLIST) : ''),
-            "priseCharge" => (isset($json[$i]->prise_RADLIST) ? getMyText('prise_RADLIST', $json[$i]->prise_RADLIST) : ''),
-            "evalNutri" => (isset($json[$i]->eval_COMBO) ? getMyText('eval_COMBO', $json[$i]->eval_COMBO) : ''),
-            "intervention1" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention2" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention3" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention4" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "suiviNutri" => (isset($json[$i]->suivi_RADLIST) ? getMyText('suivi_RADLIST', $json[$i]->suivi_RADLIST) : ''),
-        ];
+        if($json[$i] != 'error') {
+            if(!filterYear($json[$i]->noteInfosWs->dateCreation)) continue;
+
+            $countInterv = isset($json[$i]->interv_CHKLIST) ? count($json[$i]->interv_CHKLIST) : 0;
+
+            $dataToExport[$i] = [
+                "idPat" => (isset($json[$i]->patInfosWs->patientNDOSM)) ? $json[$i]->patInfosWs->patientNDOSM : '',
+                "dateScreening" => (isset($json[$i]->noteInfosWs->dateCreation) ? formatDate($json[$i]->noteInfosWs->dateCreation) : ''),
+                "indexLit" => (isset($json[$i]->loc_COMBO[0]) ? getMyText('loc_COMBO', $json[$i]->loc_COMBO[0]) : ''),
+                "age" => (isset($json[$i]->age_TXT[0]) ? $json[$i]->age_TXT[0] : ''),
+                "typeProjet" => (isset($json[$i]->projet_RADLIST[0]) ? getMyText('projet_RADLIST', $json[$i]->projet_RADLIST[0]) : ''),
+                "depistage" => (isset($json[$i]->delai_RADLIST[0]) ? getMyText('delai_RADLIST', $json[$i]->delai_RADLIST[0]) : ''),
+                "risqueDenutrition" => (isset($json[$i]->risque_RADLIST[0]) ? getMyText('risque_RADLIST', $json[$i]->risque_RADLIST[0]) : ''),
+                "reeval" => (isset($json[$i]->evalnutri_RADLIST[0]) ? getMyText('evalnutri_RADLIST', $json[$i]->evalnutri_RADLIST[0]) : ''),
+                "priseCharge" => (isset($json[$i]->prise_RADLIST[0]) ? getMyText('prise_RADLIST', $json[$i]->prise_RADLIST[0]) : ''),
+                "evalNutri" => (isset($json[$i]->eval_COMBO[0]) ? getMyText('eval_COMBO', $json[$i]->eval_COMBO[0]) : ''),
+                "intervention1" => $countInterv > 0 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[0]) : '',
+                "intervention2" => $countInterv > 1 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[1]) : '',
+                "intervention3" => $countInterv > 2 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[2]) : '',
+                "intervention4" => $countInterv > 3 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[3]) : '',
+                "suiviNutri" => (isset($json[$i]->suivi_RADLIST[0]) ? getMyText('suivi_RADLIST', $json[$i]->suivi_RADLIST[0]) : ''),
+            ];
+        } else {
+            $dataToExport[$i] = [
+                "error" => "Note invalide",
+            ];
+        }
     }
 
     return $dataToExport;
-}
-
-/**
- * Affiche dans le navigateur les données (pour test)
- */
-function showData(array $data) : void {
-    for ($i=0; $i < count($data) ; $i++) {
-        echo '<hr>';
-        echo "Identité patient anonymisée : " . $data[$i]['idPat'] .  
-        "<br>Date du screening : " . formatDate($data[$i]['dateScreening']) . 
-        "<br>Index de lit ou type d'admission : " . $data[$i]['indexLit'] .
-        "<br>Age ou date de naissance : " . $data[$i]['age'] .
-        "<br>Type de projet : " . $data[$i]['typeProjet'] .
-        "<br>Dépistage </> 48h : " . $data[$i]['depistage'] .
-        "<br>Risque de dénutrition : " . $data[$i]['risqueDenutrition'] .
-        "<br>Si le premier dépistage était négatif, y a t-il eu une réévaluation? : " . $data[$i]['reeval'] .
-        "<br>Qui a pris en charge l'intervention  nutritionnelle? : " . $data[$i]['priseCharge'] .
-        "<br>Résultat de l'évaluation nutritionnelle : " . $data[$i]['evalNutri'] .
-        "<br>Type d'intervention 1 : " . $data[$i]['intervention1'] .
-        "<br>Type d'intervention 2 : " . $data[$i]['intervention2'] .
-        "<br>Type d'intervention 3 : " . $data[$i]['intervention3'] .
-        "<br>Type d'intervention 4 : " . $data[$i]['intervention4'] .
-        "<br>Y-a-il eu un suivi nutritionnel soit en hospitalisation soit en consultation ? : " . $data[$i]['suiviNutri'];        
-    }
-    echo '<hr>';
 }
 
 /**
@@ -210,11 +206,11 @@ function formatDate(string $date) : string {
  * Vérifie si l'année correspond à celle souhaitée
  * @param $year
  */
-function checkYear(string $year) : bool {
+function filterYear(string $year) : bool {
     $year = explode("-", $year);
 
-    if($year[0] == '2023') return true;
-
+    if(empty($_POST['year'])) return true;
+    if($year[0] == $_POST['year']) return true;
     return false;
 }
 
@@ -248,7 +244,8 @@ function createCSV(array $data) : void {
     fputcsv($fp, $headers);
 
     foreach($data as $row) {
-        fputcsv($fp, $row);
+        if(!isset($row['error'])) fputcsv($fp, $row);
+        echo print_r($row) . "<br>";
     }
 
     fclose($fp);

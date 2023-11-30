@@ -52,8 +52,13 @@ class Uploader
     private function getRandom(){
         return strtotime(date('Y-m-d H:i:s')).rand(1111,9999).rand(11,99).rand(111,999);
     }
-        
-    public function uploadFile($fileBrowse) : bool{
+    
+    /**
+     * Upload le CSV de l'utilisateur
+     * @param $fileBrowse valeur attribut name de l'input file 
+     * @param $autoDelete supprime automatiquement le csv 
+     */
+    public function uploadFile(string $fileBrowse) : bool{
         $result = false;
         $size = $_FILES[$fileBrowse]["size"];
         $name = $_FILES[$fileBrowse]["name"];
@@ -67,7 +72,7 @@ class Uploader
             $this->uploadName = substr(md5(rand(1111,9999)),0,8).$this->getRandom().rand(1111,1000).rand(99,9999).".".$ext;
 
             if(move_uploaded_file($_FILES[$fileBrowse]["tmp_name"],$this->destinationPath.$this->uploadName))
-                $result = true;
+                $result = true; 
             else $this->setMessage("L'upload à échoué, réessayer !");
             
         }
