@@ -5,6 +5,13 @@ $json = getAllSpecnoteId();
 $dataToExport = filterData($json);
 createCSV($dataToExport);
 
+// print_r(count($json[8]->interv_CHKLIST));
+// echo "<hr><br><br>";
+// print_r($json[8]);
+// echo "<hr><br><br>";
+// print_r($json);
+// echo "<hr><br><br>";
+
 /**
  * Récupère le texte des CHK, RADLIST, COMBO,...
  */
@@ -78,6 +85,14 @@ function getMyText(string $comboName, $value) : string {
         if ($value == 2) return 'Geen FU/pas de suivi';
         return '';
     }
+
+    if($comboName == 'interv_CHKLIST') {
+        if ($value == 1) return 'persoonlijk advies/Conseils personnalisés';
+        if ($value == 2) return 'ONS/Compléments nutritionnels oraux';
+        if ($value == 3) return 'EN/Nutrition entérale';
+        if ($value == 4) return 'PN/Nutrition parentérale';
+        return '';
+    }
 }
 
 /**
@@ -108,23 +123,25 @@ function filterData(array $json) : array {
 
     for ($i=0; $i < count($json); $i++) { 
         if(!checkYear($json[$i]->noteInfosWs->dateCreation)) continue;
+
+        $countInterv = isset($json[$i]->interv_CHKLIST) ? count($json[$i]->interv_CHKLIST) : 0;
     
         $dataToExport[$i] = [
             "idPat" => (isset($json[$i]->patInfosWs->patientNDOSM)) ? $json[$i]->patInfosWs->patientNDOSM : '',
             "dateScreening" => (isset($json[$i]->noteInfosWs->dateCreation) ? formatDate($json[$i]->noteInfosWs->dateCreation) : ''),
-            "indexLit" => (isset($json[$i]->loc_COMBO) ? getMyText('loc_COMBO', $json[$i]->loc_COMBO) : ''),
-            "age" => (isset($json[$i]->age_TXT) ? $json[$i]->age_TXT : ''),
-            "typeProjet" => (isset($json[$i]->projet_RADLIST) ? getMyText('projet_RADLIST', $json[$i]->projet_RADLIST) : ''),
-            "depistage" => (isset($json[$i]->delai_RADLIST) ? getMyText('delai_RADLIST', $json[$i]->delai_RADLIST) : ''),
-            "risqueDenutrition" => (isset($json[$i]->risque_RADLIST) ? getMyText('risque_RADLIST', $json[$i]->risque_RADLIST) : ''),
-            "reeval" => (isset($json[$i]->evalnutri_RADLIST) ? getMyText('evalnutri_RADLIST', $json[$i]->evalnutri_RADLIST) : ''),
-            "priseCharge" => (isset($json[$i]->prise_RADLIST) ? getMyText('prise_RADLIST', $json[$i]->prise_RADLIST) : ''),
-            "evalNutri" => (isset($json[$i]->eval_COMBO) ? getMyText('eval_COMBO', $json[$i]->eval_COMBO) : ''),
-            "intervention1" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention2" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention3" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "intervention4" => (isset($json[$i]->interv_CHKLIST) ? $json[$i]->interv_CHKLIST : 'nok'),
-            "suiviNutri" => (isset($json[$i]->suivi_RADLIST) ? getMyText('suivi_RADLIST', $json[$i]->suivi_RADLIST) : ''),
+            "indexLit" => (isset($json[$i]->loc_COMBO[0]) ? getMyText('loc_COMBO', $json[$i]->loc_COMBO[0]) : ''),
+            "age" => (isset($json[$i]->age_TXT[0]) ? $json[$i]->age_TXT[0] : ''),
+            "typeProjet" => (isset($json[$i]->projet_RADLIST[0]) ? getMyText('projet_RADLIST', $json[$i]->projet_RADLIST[0]) : ''),
+            "depistage" => (isset($json[$i]->delai_RADLIST[0]) ? getMyText('delai_RADLIST', $json[$i]->delai_RADLIST[0]) : ''),
+            "risqueDenutrition" => (isset($json[$i]->risque_RADLIST[0]) ? getMyText('risque_RADLIST', $json[$i]->risque_RADLIST[0]) : ''),
+            "reeval" => (isset($json[$i]->evalnutri_RADLIST[0]) ? getMyText('evalnutri_RADLIST', $json[$i]->evalnutri_RADLIST[0]) : ''),
+            "priseCharge" => (isset($json[$i]->prise_RADLIST[0]) ? getMyText('prise_RADLIST', $json[$i]->prise_RADLIST[0]) : ''),
+            "evalNutri" => (isset($json[$i]->eval_COMBO[0]) ? getMyText('eval_COMBO', $json[$i]->eval_COMBO[0]) : ''),
+            "intervention1" => $countInterv > 0 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[0]) : '',
+            "intervention2" => $countInterv > 1 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[1]) : '',
+            "intervention3" => $countInterv > 2 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[2]) : '',
+            "intervention4" => $countInterv > 3 ? getMyText("interv_CHKLIST", $json[$i]->interv_CHKLIST[3]) : '',
+            "suiviNutri" => (isset($json[$i]->suivi_RADLIST[0]) ? getMyText('suivi_RADLIST', $json[$i]->suivi_RADLIST[0]) : ''),
         ];
     }
 
@@ -210,5 +227,4 @@ function createCSV($data) {
     }
 
     fclose($fp);
-    //https://mehulgohil.com/blog/export-data-to-csv-using-php/
 }
