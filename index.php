@@ -22,6 +22,7 @@
 require_once('helpers/Uploader.php');
 
 $json = $dataToExport = [];
+$csvName = "";
 
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -34,12 +35,15 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         $json = getAllSpecnoteId($file->getUploadName());
         $dataToExport = filterData($json);
 
-        if(!empty($dataToExport)) createCSV($dataToExport);
+        if(!empty($dataToExport)) $csvName = createCSV($dataToExport);
         else echo "Aucune données trouvées pour l'année : ".$_POST['year'];
         $file->deleteUploaded();
     } 
     else echo $file->getMessage();
 
+     // proposer le téléchargement du csv
+    if($csvName) getCSVUrl($csvName);
+    else echo "Les données envoyées sont incorrect.";
 } 
 
 /**
@@ -144,8 +148,11 @@ function getAllSpecnoteId(string $target) : array {
         $json[$i] = file_get_contents('http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/' . $specnoteId[$i][0]);        
         $json[$i] = json_decode($json[$i]);
 
-        // Si il ne s'agit pas d'un specnoteid tag en erreur
-        if(!isset($json[$i]->noteInfosWs->specNoteId)) $json[$i] = "error";        
+        // S'il ne s'agit pas d'un specnoteid valable remplace donné par "error" qui sera intercepté
+        if((!isset($json[$i]->noteInfosWs->specNoteId)) or 
+        (isset($json[$i]->noteInfosWs->noteName) and 
+        $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
+            $json[$i] = "error";
     }
 
     return $json;
@@ -187,7 +194,6 @@ function filterData(array $json) : array {
             ];
         }
     }
-
     return $dataToExport;
 }
 
@@ -218,8 +224,9 @@ function filterYear(string $year) : bool {
  * Créer le CSV avec les données à copier/coller dans le classeur Excel des diet
  * @param $data tableau contenant le données à récupérer dans le CSV
  */
-function createCSV(array $data) : void {
-    $fp = fopen("csv/export/" . getRandomName(), "w");
+function createCSV(array $data) : bool|string {
+    $filename = getRandomName();
+    $fp = fopen("csv/export/" . $filename, "w");
     // convert special char éèë,....
     fputs($fp, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
@@ -242,13 +249,31 @@ function createCSV(array $data) : void {
     );
 
     fputcsv($fp, $headers);
+    $checkData = []; $i = 0;
 
-    foreach($data as $row) {
-        if(!isset($row['error'])) fputcsv($fp, $row);
-        echo print_r($row) . "<br>";
+    foreach($data as $key => $row) {
+        if(!isset($row['error'])) {
+            fputcsv($fp, $row);
+            $checkData[$i] = $row; $i++;
+        } 
     }
 
     fclose($fp);
+
+    // Si aucune données (capture du scénario où toutes les lignes sont en "error") supprimer directement le CSV
+    if(!isset($checkData[0]['idPat'])) { 
+        unlink("csv/export/" . $filename);
+        return false;
+    }
+    return $filename;    
+}
+
+/**
+ * Crée un a href avec les données diet fraichement récupérée
+ * @param $filename nom du fichier csv
+ */
+function getCSVUrl(string $filename) : void {
+    echo "<div>Télécharger le CSV : <a href='csv/export/".$filename."'>". $filename ."</a></div>";
 }
 
 /**
