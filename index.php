@@ -205,7 +205,7 @@ function filterData(array $json) : array {
                 "suiviNutri" => (isset($json[$i]->suivi_RADLIST[0]) ? getMyText('suivi_RADLIST', $json[$i]->suivi_RADLIST[0]) : ''),
             ];
         } else {
-            $dataToExport[$i] = [
+            $dataToExport[$y] = [
                 "error" => "Note invalide",
             ];
         }
