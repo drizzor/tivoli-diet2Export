@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="public/css/style.css">
     <title>Diet Export</title>
 </head>
 <body>
@@ -44,7 +45,8 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
      // Proposer le téléchargement du csv
     if($csvName) getCSVUrl($csvName);
     else echo "Les données envoyées sont incorrect.";
-} 
+    
+} getAllCSV("csv/export");
 
 /**
  * Récupère le texte des CHK, RADLIST, COMBO,...
@@ -285,6 +287,41 @@ function createCSV(array $data) : bool|string {
 }
 
 /**
+ * Récupère l'ensemble des CSV créé
+ * @param $path chemin où doit être lu les différents fichiers
+ */
+function getAllCSV(string $path) : void {
+    $csvLinks = []; $i = 0;
+
+    if (is_dir($path)) {
+        if ($dh = opendir($path)) {
+            while (($file = readdir($dh)) !== false) {
+                if($file != "." && $file != ".." && strtolower(substr($file, strrpos($file, '.') + 1)) == 'csv') {
+                    $csvLinks[$i] = "<li><a href='".$path."/".$file."'>".$file."</a></li>"; $i++;
+                }
+            }
+            closedir($dh);
+        } 
+    } 
+    showCSV($csvLinks);
+}
+
+/**
+ * Affiche les CSV disponible dans l'interface fonction liée à getAllCSV()
+ */
+function showCSV(array $csvLinks) : void {
+    echo "<h1>Derniers fichiers créés</h1>";
+    if(!empty($csvLinks)) {
+        echo "<ul>";
+        foreach ($csvLinks as $csvLink) {
+            echo $csvLink;
+        }
+        echo "</ul>";
+    } else echo "<p>Aucun fichier pour le moment.</p>";
+        
+}
+
+/**
  * Crée un a href avec les données diet fraichement récupérée
  * @param $filename nom du fichier csv
  */
@@ -297,7 +334,9 @@ function getCSVUrl(string $filename) : void {
  * @param $ex -> Extension souhaitée par défaut CSV
  */
 function getRandomName(string $ex = "csv") : string {
-    return strtotime(date('Y-m-d H:i:s')).rand(1111,9999).rand(11,99).rand(111,999) . "." . $ex;
+    if(isset($_POST['year']) and !empty($_POST['year']))
+        return date('YmdHis').rand(1,99) . "-". htmlspecialchars($_POST['year']) . "." . $ex;
+    return date('YmdHis').rand(1,99) . "-ALL" . "." . $ex;
 }
 
 /**

@@ -10,18 +10,32 @@ class Uploader
     public $name = 'Uploader';
     public $useTable = false;
 
-    public function setDir($path){
+    /**
+     * Défini le répertoire où va être upload le fichier
+     */
+    public function setDir(string $path) : void {
         $this->destinationPath = $path;
     }
 
-    public function setMaxSize($sizeMB){
+    /**
+     * Définir la taille maximale du fichier
+     * @param $sizeMB la taille est inscrite en MB
+     */
+    public function setMaxSize(float $sizeMB) : void {
         $this->maxSize = $sizeMB * (1024*1024);
     }
 
+    /**
+     * Défini l'extension du fichier qui pourra être envoyé
+     * @param $options inscrire les différentes extensions de fichier autorisée
+     */
     public function setExtensions(array $options) : void {
         $this->extensions = $options;
     }
 
+    /**
+     * Récupère l'extension du fichier (.csv, .png,...)
+     */
     private function getExtension(string $string) : string {
         $ext = "";
         try{
@@ -33,23 +47,38 @@ class Uploader
         return $ext;
     }
 
-    public function getDir(){
+    /**
+     * Récupère le chemin/répertoire du fichier
+     */
+    public function getDir() : string {
         return $this->destinationPath;
     }
 
-    private function setMessage($message){
+    /**
+     * Défini le message d'erreur
+     */
+    private function setMessage(string $message) : void {
         $this->errorMessage = $message;
     }
 
-    public function getMessage(){
+    /**
+     * Récupère le message d'erreur
+     */
+    public function getMessage() : string {
         return $this->errorMessage;
     }
 
-    public function getUploadName(){
+    /**
+     * Récupère le nom du fichier de l'instance
+     */
+    public function getUploadName() : string {
         return $this->uploadName;
     }
 
-    private function getRandom(){
+    /**
+     * Retourne un nom aléatoire pour la création de fichiers
+     */
+    private function getRandom() : string {
         return strtotime(date('Y-m-d H:i:s')).rand(1111,9999).rand(11,99).rand(111,999);
     }
     
@@ -81,6 +110,9 @@ class Uploader
         return $result;
     }
 
+    /**
+     * Supprime le fichier
+     */
     public function deleteUploaded() : void{
         unlink($this->destinationPath.$this->uploadName);
     }
