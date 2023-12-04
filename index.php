@@ -41,7 +41,7 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     } 
     else echo $file->getMessage();
 
-     // proposer le téléchargement du csv
+     // Proposer le téléchargement du csv
     if($csvName) getCSVUrl($csvName);
     else echo "Les données envoyées sont incorrect.";
 } 
@@ -144,16 +144,32 @@ function getAllSpecnoteId(string $target) : array {
         $specnoteId[$key] = str_getcsv($value);
     }
 
-    for ($i=0; $i < count($specnoteId); $i++) { 
-        $json[$i] = file_get_contents('http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/' . $specnoteId[$i][0]);        
-        $json[$i] = json_decode($json[$i]);
-
-        // S'il ne s'agit pas d'un specnoteid valable remplace donné par "error" qui sera intercepté
-        if((!isset($json[$i]->noteInfosWs->specNoteId)) or 
-        (isset($json[$i]->noteInfosWs->noteName) and 
-        $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
-            $json[$i] = "error";
+    set_error_handler(
+        function ($err_severity, $err_msg, $err_file, $err_line) {
+            // do not throw an exception if the @-operator is used (suppress)
+            if (error_reporting() === 0) return false;
+            throw new ErrorException( $err_msg, 0, $err_severity, $err_file, $err_line );
+        },
+        E_WARNING
+    );
+    // Permet notament de capturer l'éventuelle espace blanc (sans contenu) au milieu du fichier
+    try {
+        for ($i=0; $i < count($specnoteId); $i++) { 
+            $json[$i] = file_get_contents('http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/' . $specnoteId[$i][0]);        
+            $json[$i] = json_decode($json[$i]);
+    
+            // S'il ne s'agit pas d'un specnoteid valable remplace donné par "error" qui sera intercepté
+            if((!isset($json[$i]->noteInfosWs->specNoteId)) or 
+            (isset($json[$i]->noteInfosWs->noteName) and 
+            $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
+                $json[$i] = "error";
+        }
+    } catch (Exception $e) {
+        debug_to_console("Erreur présente dans le fichier uploadé. Certaine ligne ont été ignorée.");
     }
+    restore_error_handler();
+
+    
 
     return $json;
 }
@@ -165,13 +181,13 @@ function getAllSpecnoteId(string $target) : array {
 function filterData(array $json) : array {
     $dataToExport = [];
 
-    for ($i=0; $i < count($json); $i++) { 
+    for ($i = $y = 0; $i < count($json); $i++, $y++) { 
         if($json[$i] != 'error') {
-            if(!filterYear($json[$i]->noteInfosWs->dateCreation)) continue;
+            if(!filterYear($json[$i]->noteInfosWs->dateCreation)) {$y-=1;continue;}
 
             $countInterv = isset($json[$i]->interv_CHKLIST) ? count($json[$i]->interv_CHKLIST) : 0;
 
-            $dataToExport[$i] = [
+            $dataToExport[$y] = [
                 "idPat" => (isset($json[$i]->patInfosWs->patientNDOSM)) ? $json[$i]->patInfosWs->patientNDOSM : '',
                 "dateScreening" => (isset($json[$i]->noteInfosWs->dateCreation) ? formatDate($json[$i]->noteInfosWs->dateCreation) : ''),
                 "indexLit" => (isset($json[$i]->loc_COMBO[0]) ? getMyText('loc_COMBO', $json[$i]->loc_COMBO[0]) : ''),
@@ -282,4 +298,15 @@ function getCSVUrl(string $filename) : void {
  */
 function getRandomName(string $ex = "csv") : string {
     return strtotime(date('Y-m-d H:i:s')).rand(1111,9999).rand(11,99).rand(111,999) . "." . $ex;
+}
+
+/**
+ * Permet d'envoyer un message d'erreur dans la console
+ */
+function debug_to_console(string | array $data) : void {
+    $output = $data;
+    if (is_array($output))
+        $output = implode(',', $output);
+
+    echo "<script>console.log('Debug Objects: " . $output . "' );</script>";
 }
