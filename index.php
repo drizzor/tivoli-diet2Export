@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="public/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400&display=swap" rel="stylesheet"> 
     <title>Diet Export</title>
 </head>
 <body>
@@ -20,7 +23,8 @@
 </html>
 
 <?php
-require_once('helpers/Uploader.php');
+require_once('app/helpers/Uploader.php');
+require_once('app/helpers/tools.php');
 
 $json = $dataToExport = [];
 $csvName = "";
@@ -297,28 +301,30 @@ function getAllCSV(string $path) : void {
         if ($dh = opendir($path)) {
             while (($file = readdir($dh)) !== false) {
                 if($file != "." && $file != ".." && strtolower(substr($file, strrpos($file, '.') + 1)) == 'csv') {
-                    $csvLinks[$i] = "<li><a href='".$path."/".$file."'>".$file."</a></li>"; $i++;
+                    $csvLinks[$i]["link"] = "<li><a href='".$path."/".$file."'>".$file."</a></li>"; 
+                    $csvLinks[$i]["path"] = $path."/".$file;
+                    $i++;
                 }
             }
             closedir($dh);
         } 
-    } 
+    }     
+    $csvLinks = cleanCsvList(array_reverse($csvLinks));
     showCSV($csvLinks);
 }
 
 /**
- * Affiche les CSV disponible dans l'interface fonction liée à getAllCSV()
+ * Affiche les CSV disponible dans l'interface (fonction liée à getAllCSV())
  */
 function showCSV(array $csvLinks) : void {
     echo "<h1>Derniers fichiers créés</h1>";
-    if(!empty($csvLinks)) {
+    if(!empty($csvLinks)) {          
         echo "<ul>";
         foreach ($csvLinks as $csvLink) {
-            echo $csvLink;
+            echo $csvLink['link'];
         }
         echo "</ul>";
     } else echo "<p>Aucun fichier pour le moment.</p>";
-        
 }
 
 /**
@@ -327,6 +333,19 @@ function showCSV(array $csvLinks) : void {
  */
 function getCSVUrl(string $filename) : void {
     echo "<div>Télécharger le CSV : <a href='csv/export/".$filename."'>". $filename ."</a></div>";
+}
+
+/**
+ * Supprime la dernière valeur SI plus de 20 éléments
+ * @param $data contient les fichiers existants ainsi que leur localisation
+ * @param $max nombre maximum de fichier autorisé
+ */
+function cleanCsvList(array $data, int $max = 20) : array {
+    if(count($data) > $max) {
+        unlink(end($data)['path']);
+        array_pop($data);
+    }
+    return $data;
 }
 
 /**
