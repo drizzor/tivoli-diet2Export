@@ -16,15 +16,13 @@
 
         <label for="uploadCSV">Upload du CSV:</label>
         <input type="file" name="uploadCSV" id="uploadCSV"><br>
-
         <button type="submit">Générer le CSV</button>
     </form>
 </body>
 </html>
 
 <?php
-require_once('app/helpers/Uploader.php');
-require_once('app/helpers/tools.php');
+require_once('app/bootstrap.php');
 
 $json = $dataToExport = [];
 $csvName = "";
@@ -32,25 +30,30 @@ $csvName = "";
 if($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $file = new Uploader();
-    $file->setDir("csv/specnoteid/");
+    $file->setDir("public/csv/specnoteid/");
     $file->setMaxSize(.5);
     $file->setExtensions(array('csv'));
+    $createCSV = new CSVCreator($file->getDir().$file->getUploadName());
 
     if($file->uploadFile('uploadCSV')) {
-        $json = getAllSpecnoteId($file->getUploadName());
-        $dataToExport = filterData($json);
+        // $json = getAllSpecnoteId($file->getDir().$file->getUploadName());
+        // $dataToExport = filterData($json);
 
-        if(!empty($dataToExport)) $csvName = createCSV($dataToExport);
-        else echo "Aucune données trouvées pour l'année : ".$_POST['year'];
+        // if(!empty($dataToExport)) $csvName = createCSV($dataToExport);
+        // else echo "Aucune données trouvées pour l'année : ".$_POST['year'];
+        
+        $createCSV->setPath("public/csv/export/");
+        $createCSV->create();
         $file->deleteUploaded();
     } 
     else echo $file->getMessage();
 
      // Proposer le téléchargement du csv
-    if($csvName) getCSVUrl($csvName);
-    else echo "Les données envoyées sont incorrect.";
+     if(!$createCSV->getErrorMessage())
+        getCSVUrl($createCSV->getFilename());
+    else echo $createCSV->getErrorMessage();
     
-} getAllCSV("csv/export");
+} getAllCSV("public/csv/export");
 
 /**
  * Récupère le texte des CHK, RADLIST, COMBO,...
@@ -143,7 +146,7 @@ function getMyText(string $fieldName, $value) : string {
  */
 function getAllSpecnoteId(string $target) : array {
     $specnoteId = $json  = [];
-    $lines = file("csv/specnoteid/" . $target, FILE_IGNORE_NEW_LINES);
+    $lines = file($target, FILE_IGNORE_NEW_LINES);
 
     foreach ($lines as $key => $value)
     {
@@ -158,6 +161,7 @@ function getAllSpecnoteId(string $target) : array {
         },
         E_WARNING
     );
+
     // Permet notament de capturer l'éventuelle espace blanc (sans contenu) au milieu du fichier
     try {
         for ($i=0; $i < count($specnoteId); $i++) { 
@@ -171,11 +175,9 @@ function getAllSpecnoteId(string $target) : array {
                 $json[$i] = "error";
         }
     } catch (Exception $e) {
-        debug_to_console("Erreur présente dans le fichier uploadé. Certaine ligne ont été ignorée.");
+        // debug_to_console("Erreur présente dans le fichier uploadé. Certaine ligne ont été ignorée.");
     }
     restore_error_handler();
-
-    
 
     return $json;
 }
@@ -248,7 +250,7 @@ function filterYear(string $year) : bool {
  */
 function createCSV(array $data) : bool|string {
     $filename = getRandomName();
-    $fp = fopen("csv/export/" . $filename, "w");
+    $fp = fopen("public/csv/export/" . $filename, "w");
     // convert special char éèë,....
     fputs($fp, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
@@ -284,7 +286,7 @@ function createCSV(array $data) : bool|string {
 
     // Si aucune données (capture du scénario où toutes les lignes sont en "error") supprimer directement le CSV
     if(!isset($checkData[0]['idPat'])) { 
-        unlink("csv/export/" . $filename);
+        unlink("public/csv/export/" . $filename);
         return false;
     }
     return $filename;    
@@ -332,7 +334,7 @@ function showCSV(array $csvLinks) : void {
  * @param $filename nom du fichier csv
  */
 function getCSVUrl(string $filename) : void {
-    echo "<div>Télécharger le CSV : <a href='csv/export/".$filename."'>". $filename ."</a></div>";
+    echo "<div>Télécharger le CSV : <a href='public/csv/export/".$filename."'>". $filename ."</a></div>";
 }
 
 /**
@@ -340,7 +342,7 @@ function getCSVUrl(string $filename) : void {
  * @param $data contient les fichiers existants ainsi que leur localisation
  * @param $max nombre maximum de fichier autorisé
  */
-function cleanCsvList(array $data, int $max = 20) : array {
+function cleanCsvList(array $data, int $max = 5) : array {
     if(count($data) > $max) {
         unlink(end($data)['path']);
         array_pop($data);
@@ -356,15 +358,4 @@ function getRandomName(string $ex = "csv") : string {
     if(isset($_POST['year']) and !empty($_POST['year']))
         return date('YmdHis').rand(1,99) . "-". htmlspecialchars($_POST['year']) . "." . $ex;
     return date('YmdHis').rand(1,99) . "-ALL" . "." . $ex;
-}
-
-/**
- * Permet d'envoyer un message d'erreur dans la console
- */
-function debug_to_console(string | array $data) : void {
-    $output = $data;
-    if (is_array($output))
-        $output = implode(',', $output);
-
-    echo "<script>console.log('Debug Objects: " . $output . "' );</script>";
 }

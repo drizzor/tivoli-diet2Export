@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Classe permettant l'uplaod de fichier
+ */
 class Uploader
 {
     private $destinationPath;
