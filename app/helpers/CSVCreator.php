@@ -263,7 +263,7 @@ class CSVCreator
             if ($dh = opendir($this->_destinationPath)) {
                 while (($file = readdir($dh)) !== false) {
                     if($file != "." && $file != ".." && strtolower(substr($file, strrpos($file, '.') + 1)) == $this->_extension) {
-                        $csvLinks[$i]["link"] = "<li><a href='".$this->_destinationPath.$file."'>".$file."</a></li>"; 
+                        $csvLinks[$i]["link"] = "<li><a href='".$this->_destinationPath.$file."'><span><i class='fa-regular fa-file'></i></span>".$file."</a></li>"; 
                         $csvLinks[$i]["path"] = $this->_destinationPath.$file;
                         $i++;
                     }
@@ -281,6 +281,7 @@ class CSVCreator
     */
     private function showCSV(array $csvLinks) : void 
     {
+        echo "<div class='box'>";
         echo "<h2>Derniers fichiers créés</h2>";
         if(!empty($csvLinks)) {          
             echo "<ul>";
@@ -289,6 +290,7 @@ class CSVCreator
             }
             echo "</ul>";
         } else echo "<p>Aucun fichier pour le moment.</p>";
+        echo "</div>";
     }
 
     /**

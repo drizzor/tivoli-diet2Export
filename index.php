@@ -19,12 +19,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <title>Diet Export</title>
 </head>
 <body>
-    <h1>Extraction équipes nutritionnelles et Plan Cancer</h1>
-    <p>Extraction valable uniquement pour la note <b>Diagnostic de l'état nutritionnel adulte</b>. <br/>
-    Le fichier CSV doit contenir uniquement une colonne de specnote ID. Ceux ne correspondant pas à la note seront ignoré.</p>
     <?php if($createCSV->getErrorMessage()): ?>
         <div class="error" style="color:red"><?=$createCSV->getErrorMessage()?></div>
     <?php endif; ?>    
@@ -32,11 +30,11 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="error" style="color:red"><?=$file->getMessage()?></div>
     <?php endif; ?> 
 
-    
-    <?php
-        // Proposer le téléchargement du csv
-        if($createCSV->getAllOK() and $file->getAllOK()) $createCSV->getCSVUrl();
-    ?>
+    <h1>Extraction équipes nutritionnelles et Plan Cancer</h1>
+    <p>Extraction valable uniquement pour la note <b>Diagnostic de l'état nutritionnel adulte</b>. <br/>
+    Le fichier CSV doit contenir uniquement une colonne de specnote ID. Ceux ne correspondant pas à la note seront ignoré.</p>
+
+    <?php if($createCSV->getAllOK() and $file->getAllOK()) $createCSV->getCSVUrl(); ?>
 
     <form action="index.php" method="POST" enctype="multipart/form-data">
         <label for="year">Année souhaitée:</label>
