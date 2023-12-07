@@ -8,8 +8,6 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
         $createCSV->create("year");
         $file->deleteUploaded();
     } 
-
-     
 } 
 ?>
 

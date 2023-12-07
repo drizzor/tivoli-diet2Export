@@ -86,7 +86,9 @@ class CSVCreator
                 $json[$i] = json_decode($json[$i]);
         
                 // ignoré se qui ne correspond pas à la note
-                if((!isset($json[$i]->noteInfosWs->specNoteId)) or 
+                if(!isset($json[$i]->patInfosWs->patientNom) or $json[$i]->patInfosWs->patientNom == "TEST")
+                    $y--;
+                elseif((!isset($json[$i]->noteInfosWs->specNoteId)) or 
                 (isset($json[$i]->noteInfosWs->noteName) and 
                 $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
                     $y--;
