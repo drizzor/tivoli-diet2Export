@@ -24,10 +24,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <?php if($createCSV->getErrorMessage()): ?>
-        <div class="error" style="color:red"><?=$createCSV->getErrorMessage()?></div>
+        <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$createCSV->getErrorMessage()?></div>
     <?php endif; ?>    
     <?php if($file->getMessage()): ?>
-        <div class="error" style="color:red"><?=$file->getMessage()?></div>
+        <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$file->getMessage()?></div>
     <?php endif; ?> 
 
     <h1>Extraction équipes nutritionnelles et Plan Cancer</h1>
