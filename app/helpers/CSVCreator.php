@@ -1,36 +1,32 @@
 <?php
-
 /**
- * Classe permettant la création des fichiers CSV
- */
+* Classe permettant la création des fichiers CSV
+*/
 class CSVCreator
 {
     private string $_dataSourcePath;
     private string $_destinationPath;
     private string $_filename;
-    private string $_errorMessage;
+    private string $_year;
+    private string|bool $_errorMessage = false;
     private string $_extension = "csv";
     private string $_apiurl = "http://intranet-common.bureautique.local/chupmbws/ebdapptiv/v1/note-export/diete-nutrition-adulte/";
-
     private array $_specnoteId;
     private array $_json;
     private array $_dataToExport;
 
-    /**
-     * Constructeur permettant de récupérer le fichier source
-     * @param string $dataSourcePath Chemin vers le fichier source à lire (ex: pubic/csv/export/file.csv)
-     */
-    public function __construct(string $dataSourcePath)
-    {
-        $this->_dataSourcePath = $dataSourcePath;
-    }
+    private bool $_allOK = false;
 
     /**
-     * Créer le CSV avec les données à copier/coller dans le classeur Excel des diet
-     */
-    public function create()
+    * Créer le CSV avec les données à copier/coller dans le classeur Excel des diet
+    * @param string $year Année sur laquelles sont filtré les données
+    */
+    public function create(string $year) : void
     {
+        $this->_year = trim(htmlspecialchars($_POST[$year]));
         $this->fillAllId($this->_dataSourcePath);
+        $this->filterData();
+
         if(!empty($this->_dataToExport)) {
             $this->_setFilename();
             $fp = fopen($this->_destinationPath.$this->_filename, "w");
@@ -56,58 +52,62 @@ class CSVCreator
             );
         
             fputcsv($fp, $headers);
-            if(!$this->_checkIntegrity($fp)) $this->_setErrorMessage("Les données envoyées sont incorrect.");
-        } else $this->_setErrorMessage("Aucune données trouvées pour l'année : ".$_POST['year']);
-        
+            foreach($this->_dataToExport as $row){fputcsv($fp, $row);}
+            fclose($fp);
+            $this->setAllOK(true);
+        } else 
+            $this->_setErrorMessage("Aucune données trouvées sur base des informations envoyées. Vérifier le CSV uploadé et/ou l'année ('".$this->_year."' envoyé).");
     }
 
     /**
-     * Récupère dans un tableau l'ensemble des specnoteid
-     * @param $target cible le fichier envoyé par l'utilisateur comprenant les specnoteid
-     */
-    private function fillAllId(string $target)
+    * Récupère dans un tableau l'ensemble des specnoteid
+    * @param $target cible le fichier envoyé par l'utilisateur comprenant les specnoteid
+    */
+    private function fillAllId(string $target) : void
     {
         $lines = file($target, FILE_IGNORE_NEW_LINES);
 
-        foreach ($lines as $key => $value)
-        {
-            $this->_specnoteId[$key] = str_getcsv($value);
+        for ($i = $y =0; $i < count($lines); $i++,$y++) { 
+            if(!empty($lines[$i])) // ne pas inclure le ligne vide
+                $this->_specnoteId[$y] = str_getcsv($lines[$i]);
+            else $y--;
         }
         $this->fillAllData();
     }
 
     /**
-     * Récupère l'ensemble des informations depuis l'API
-     */
-    private function fillAllData()
+    * Récupère l'ensemble des informations depuis l'API
+    */
+    private function fillAllData() : void
     {
         try {
-            for ($i=0; $i < count($this->_specnoteId); $i++) { 
-                $this->_json[$i] = file_get_contents($this->_apiurl . $this->_specnoteId[$i][0]);        
-                $this->_json[$i] = json_decode($this->_json[$i]);
+            for ($i=$y=0; $i < count($this->_specnoteId); $i++,$y++) { 
+                $json[$i] = file_get_contents($this->_apiurl . $this->_specnoteId[$i][0]);        
+                $json[$i] = json_decode($json[$i]);
         
-                // S'il ne s'agit pas d'un specnoteid valable remplace la donnée par "error" qui sera intercepté
-                if((!isset($this->_json[$i]->noteInfosWs->specNoteId)) or 
-                (isset($this->_json[$i]->noteInfosWs->noteName) and 
-                $this->_json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
-                    $this->_json[$i] = "error";
-            } $this->filterData();
+                // ignoré se qui ne correspond pas à la note
+                if((!isset($json[$i]->noteInfosWs->specNoteId)) or 
+                (isset($json[$i]->noteInfosWs->noteName) and 
+                $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
+                    $y--;
+                else $this->_json[$y] = $json[$i];
+            } 
         } catch (Exception $e) {
             throw new Exception('Erreur lors de la lecture du JSON : '.$e);
         }
     }
 
     /**
-     * Filtre les données afin des les préparer telles qu'elles doivent apparaitre pour l'extraction
-     */
+    * Filtre les données afin des les préparer telles qu'elles doivent apparaitre pour l'extraction
+    */
     private function filterData() : void
     {
-        for ($i = $y = 0; $i < count($this->_json); $i++, $y++) { 
-            if($this->_json[$i] != 'error') {
+        if(!empty($this->_json)) {
+            for ($i = $y = 0; $i < count($this->_json); $i++, $y++) { 
                 if(!$this->filterYear($this->_json[$i]->noteInfosWs->dateCreation)) {$y-=1;continue;}
-
+    
                 $countInterv = isset($this->_json[$i]->interv_CHKLIST) ? count($this->_json[$i]->interv_CHKLIST) : 0;
-
+    
                 $this->_dataToExport[$y] = [
                     "idPat" => (isset($this->_json[$i]->patInfosWs->patientNDOSM)) ? $this->_json[$i]->patInfosWs->patientNDOSM : '',
                     "dateScreening" => (isset($this->_json[$i]->noteInfosWs->dateCreation) ? $this->formatDate($this->_json[$i]->noteInfosWs->dateCreation) : ''),
@@ -125,42 +125,14 @@ class CSVCreator
                     "intervention4" => $countInterv > 3 ? $this->getMyText("interv_CHKLIST", $this->_json[$i]->interv_CHKLIST[3]) : '',
                     "suiviNutri" => (isset($this->_json[$i]->suivi_RADLIST[0]) ? $this->getMyText('suivi_RADLIST', $this->_json[$i]->suivi_RADLIST[0]) : ''),
                 ];
-            } else {
-                $this->_dataToExport[$y] = [
-                    "error" => "Note invalide",
-                ];
-            }
-        }
-    }
-
-    /**
-     * Vérifie si les données sont intègre et donc pas remplie de "error"
-     * @param $fp fichier csv ouvert à vérifier
-     */
-    private function _checkIntegrity($fp) : bool
-    {
-        $checkData = []; $i = 0;
-        
-        foreach($this->_dataToExport as $key => $row) {
-            if(!isset($row['error'])) {
-                fputcsv($fp, $row);
-                $checkData[$i] = $row; $i++;
             } 
         }
-    
-        fclose($fp);
-    
-        // Si aucune données (capture du scénario où toutes les lignes sont en "error") supprimer directement le CSV
-        if(!isset($checkData[0]['idPat'])) { 
-            unlink("public/csv/export/" . $this->getFilename());
-            return false;
-        } return true;
     }
 
     /**
-     * Formate la date : 240823
-     * @param $date au format 2023-07-19 11:51:03
-     */
+    * Formate la date : 240823
+    * @param $date au format 2023-07-19 11:51:03
+    */
     private function formatDate(string $date) : string 
     {
         $date = substr($date, 0, strpos($date, " "));
@@ -170,23 +142,23 @@ class CSVCreator
     }
 
     /**
-     * Vérifie si l'année correspond à celle souhaitée
-     * @param $year
-     */
+    * Vérifie si l'année correspond à celle souhaitée
+    * @param $year
+    */
     private function filterYear(string $year) : bool 
     {
         $year = explode("-", $year);
 
-        if(empty($_POST['year'])) return true;
-        if($year[0] == $_POST['year']) return true;
+        if(empty($this->_year)) return true;
+        if($year[0] == $this->_year) return true;
         return false;
     }
 
     /**
-     * Récupère le texte des CHK, RADLIST, COMBO,...
-     * @param $fieldName nom du champ dont les données doivent-être récupérée
-     * @param $value la valeur du champ qui doit être traduit
-     */
+    * Récupère le texte des CHK, RADLIST, COMBO,...
+    * @param $fieldName nom du champ dont les données doivent-être récupérée
+    * @param $value la valeur du champ qui doit être traduit
+    */
     private function getMyText(string $fieldName, $value) : string 
     {
         if($fieldName == 'loc_COMBO') {
@@ -267,20 +239,91 @@ class CSVCreator
             return '';
         }
     }
+
+    /**
+    * Crée un a href avec les données diet fraichement récupérée
+    * @param $filename nom du fichier csv
+    */
+    public function getCSVUrl() : void 
+    {
+        echo "<div>Télécharger le CSV : <a href='".$this->_destinationPath.$this->_filename."'>". $this->_filename."</a></div>";
+    }
+
+    /**
+    * Récupère l'ensemble des CSV créé
+    * @param $path chemin où doit être lu les différents fichiers
+    */
+    public function getAllCSV() : void 
+    {
+        $csvLinks = []; $i = 0;
+
+        if (is_dir($this->_destinationPath)) {
+            if ($dh = opendir($this->_destinationPath)) {
+                while (($file = readdir($dh)) !== false) {
+                    if($file != "." && $file != ".." && strtolower(substr($file, strrpos($file, '.') + 1)) == $this->_extension) {
+                        $csvLinks[$i]["link"] = "<li><a href='".$this->_destinationPath.$file."'>".$file."</a></li>"; 
+                        $csvLinks[$i]["path"] = $this->_destinationPath.$file;
+                        $i++;
+                    }
+                }
+                closedir($dh);
+            } 
+        }     
+        $csvLinks = $this->cleanCsvList(array_reverse($csvLinks));
+        $this->showCSV($csvLinks);
+    }
+
+    /**
+    * Affiche les CSV disponible dans l'interface (fonction liée à getAllCSV())
+    * @param array $csvLinks contient les liens ainsi que les chemins vers les fichiers
+    */
+    private function showCSV(array $csvLinks) : void 
+    {
+        echo "<h2>Derniers fichiers créés</h2>";
+        if(!empty($csvLinks)) {          
+            echo "<ul>";
+            foreach ($csvLinks as $csvLink) {
+                echo $csvLink['link'];
+            }
+            echo "</ul>";
+        } else echo "<p>Aucun fichier pour le moment.</p>";
+    }
+
+    /**
+    * Supprime la dernière valeur SI plus de 20 éléments
+    * @param $data contient les fichiers existants ainsi que leur localisation
+    * @param $max nombre maximum de fichier autorisé
+    */
+    private function cleanCsvList(array $data, int $max = 5) : array 
+    {
+        if(count($data) > $max) {
+            unlink(end($data)['path']);
+            array_pop($data);
+        }
+        return $data;
+    }
     
     /**
-     * Défini un nom alétoire au csv
-     */
+    * Défini un nom alétoire au csv
+    */
     private function _setFilename() : void 
     { 
-        if(isset($_POST['year']) and !empty($_POST['year']))
-            $this->_filename = date('YmdHis').rand(1,99) . "-". htmlspecialchars($_POST['year']) . "." . $this->_extension;
-        $this->_filename = date('YmdHis').rand(1,99) . "-ALL" . "." . $this->_extension;
+        if(!empty($this->_year))
+            $this->_filename = date('YmdHis').rand(1,99) . "-". htmlspecialchars($this->_year) . "." . $this->_extension;
+        else $this->_filename = date('YmdHis').rand(1,99) . "-ALL" . "." . $this->_extension;
     }
 
     private function _setErrorMessage(string $message) : void { $this->_errorMessage = $message; }
+
+    /**
+    * Définir le fichier source
+    * @param string $dir Chemin vers le fichier source à lire (ex: pubic/csv/export/file.csv)
+    */
+    public function setDataSourcePath(string $dir) : void { $this->_dataSourcePath = $dir; }
     public function setPath(string $path) : void { $this->_destinationPath = $path; }
+    private function setAllOK(bool $result) : void { $this->_allOK = $result; }
     public function getErrorMessage() : string { return $this->_errorMessage; }
     public function getPath() : string { return $this->_destinationPath; }
     public function getFilename() : string { return $this->_filename; }
+    public function getAllOK() : bool { return $this->_allOK; }
 }
