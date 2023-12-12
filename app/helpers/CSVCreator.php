@@ -132,9 +132,9 @@ class CSVCreator
     }
 
     /**
-     * Anonymisation des données (checksum num dossier du patient)
-     * @param string $patientNDOSM numéro dossier du patient anonymiser
-     */
+    * Anonymisation des données (checksum num dossier du patient)
+    * @param string $patientNDOSM numéro dossier du patient anonymiser
+    */
     private function checkSumIdPat(string|int $patientNDOSM) : int
     {
         return crc32($patientNDOSM);
