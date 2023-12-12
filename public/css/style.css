@@ -91,7 +91,7 @@ button[type=submit] {
     margin-right: 20px;
 }
 
-input::file-selector-button {
+input[type="file"]::file-selector-button {
     padding: 8px 23px;
     border-radius: 50px;
     cursor: pointer;
@@ -100,6 +100,12 @@ input::file-selector-button {
     color: white;
     letter-spacing: 1.5px;
     transition: all 0.5s ease;
+}
+
+input[type="file"]::file-selector-button:hover {
+    border: 1px solid transparent;
+    background-color: white;
+    color: black;
 }
 
 /*******

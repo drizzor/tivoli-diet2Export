@@ -111,7 +111,7 @@ class CSVCreator
                 $countInterv = isset($this->_json[$i]->interv_CHKLIST) ? count($this->_json[$i]->interv_CHKLIST) : 0;
     
                 $this->_dataToExport[$y] = [
-                    "idPat" => (isset($this->_json[$i]->patInfosWs->patientNDOSM)) ? $this->_json[$i]->patInfosWs->patientNDOSM : '',
+                    "idPat" => (isset($this->_json[$i]->patInfosWs->patientNDOSM)) ? $this->checkSumIdPat($this->_json[$i]->patInfosWs->patientNDOSM) : '',
                     "dateScreening" => (isset($this->_json[$i]->noteInfosWs->dateCreation) ? $this->formatDate($this->_json[$i]->noteInfosWs->dateCreation) : ''),
                     "indexLit" => (isset($this->_json[$i]->loc_COMBO[0]) ? $this->getMyText('loc_COMBO', $this->_json[$i]->loc_COMBO[0]) : ''),
                     "age" => (isset($this->_json[$i]->age_TXT[0]) ? $this->_json[$i]->age_TXT[0] : ''),
@@ -129,6 +129,15 @@ class CSVCreator
                 ];
             } 
         }
+    }
+
+    /**
+     * Anonymisation des données (checksum num dossier du patient)
+     * @param string $patientNDOSM numéro dossier du patient anonymiser
+     */
+    private function checkSumIdPat(string|int $patientNDOSM) : int
+    {
+        return crc32($patientNDOSM);
     }
 
     /**
@@ -150,7 +159,6 @@ class CSVCreator
     private function filterYear(string $year) : bool 
     {
         $year = explode("-", $year);
-
         if(empty($this->_year)) return true;
         if($year[0] == $this->_year) return true;
         return false;
