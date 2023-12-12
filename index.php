@@ -23,28 +23,37 @@ if($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Diet Export</title>
 </head>
 <body>
-    <?php if($createCSV->getErrorMessage()): ?>
-        <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$createCSV->getErrorMessage()?></div>
-    <?php endif; ?>    
-    <?php if($file->getMessage()): ?>
-        <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$file->getMessage()?></div>
-    <?php endif; ?> 
+    <div class="container">
+        <div class="child-container">
+            <div class="form-title"><h2>Extraction équipes nutritionnelles et Plan Cancer</h2></div>
+            <div class="form-card">
+                
+                <p>Extraction valable uniquement pour la note <b>Diagnostic de l'état nutritionnel adulte</b>. <br/>
+                Le fichier CSV doit contenir uniquement une colonne de specnote ID. Ceux ne correspondant pas à la note seront ignoré.</p>
 
-    <h1>Extraction équipes nutritionnelles et Plan Cancer</h1>
-    <p>Extraction valable uniquement pour la note <b>Diagnostic de l'état nutritionnel adulte</b>. <br/>
-    Le fichier CSV doit contenir uniquement une colonne de specnote ID. Ceux ne correspondant pas à la note seront ignoré.</p>
+                <form action="index.php" method="POST" enctype="multipart/form-data">
+                    <label for="year">Année souhaitée:</label>
+                    <input type="text" name="year" id="year" value="<?= date('Y') ?>"><br>
 
-    <?php if($createCSV->getAllOK() and $file->getAllOK()) $createCSV->getCSVUrl(); ?>
+                    <label for="uploadCSV">Upload du CSV:</label>
+                    <input type="file" name="uploadCSV" id="uploadCSV"><br>
+                    <button class="btn" type="submit">Générer le CSV</button>
+                    <?php if($createCSV->getAllOK() and $file->getAllOK()) $createCSV->getCSVUrl(); ?>
+                </form>
+            </div>
+            <?php if($createCSV->getErrorMessage()): ?>
+                <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$createCSV->getErrorMessage()?></div>
+            <?php endif; ?>    
+            <?php if($file->getMessage()): ?>
+                <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$file->getMessage()?></div>
+            <?php endif; ?> 
+        </div>
 
-    <form action="index.php" method="POST" enctype="multipart/form-data">
-        <label for="year">Année souhaitée:</label>
-        <input type="text" name="year" id="year" value="<?= date('Y') ?>"><br>
-
-        <label for="uploadCSV">Upload du CSV:</label>
-        <input type="file" name="uploadCSV" id="uploadCSV"><br>
-        <button type="submit">Générer le CSV</button>
-    </form>
-    <?= $createCSV->getAllCSV(); ?>
+        <div class="child-container">
+            <?= $createCSV->getAllCSV(); ?>
+        </div>
+    </div>
+    
 </body>
 </html>
 

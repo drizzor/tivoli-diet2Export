@@ -1,13 +1,55 @@
+/*********************
+Configuration générale
+************************/
 body {
     font-family: 'Roboto', sans-serif;
     background-color: #161b22;
     color: lightgrey;
 }
 
+/***********
+Alignement
+**********/
+.container {
+    display: flex;
+}
+
+.child-container {
+    flex: 1;
+}
+
+.child-container:first-child {
+    margin-right: 20px;
+}
+
+/*********
+Form card 
+**********/
+.form-title h2 {
+    color: #e7ebf0;
+    background: #17242c;
+    padding: 10px 20px;
+    font-size: 20px;
+    font-weight: 500;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+.form-card {
+    background-color: #1a2935;
+    padding: 10px 15px 25px 10px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+    margin: -16px 0 20px 0;
+}
+
+/*********************
+Affichage des erreurs
+***********************/
 .error {
     border: .3px solid rgb(218, 85, 85);
-    margin: 10px 0px;
-    width: 40%;
+    margin: auto;
+    width: 80%;
     padding: 15px 10px 15px 10px;
     color: rgb(218, 85, 85);
     background-color: rgb(218, 85, 85, .25);
@@ -17,9 +59,76 @@ body {
     margin-right: 10px;
 }
 
-/* Box listing csv */
+/*******
+Bouton
+********/
+button {
+    padding: 12px 30px;
+    border-radius: 50px;
+    cursor: pointer;
+    border: 0;
+    background-color: white;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.5s ease;
+}
+
+button:hover {
+    letter-spacing: 3px;
+    background-color: #009ca9;
+    color: white;
+}
+
+button:active {
+    letter-spacing: 3px;
+    background-color: #007e8a;
+    color: white;
+    transition: 100ms;
+}
+
+button[type=submit] {
+    margin-top: 20px;
+    margin-right: 20px;
+}
+
+input::file-selector-button {
+    padding: 8px 23px;
+    border-radius: 50px;
+    cursor: pointer;
+    border: 1px solid white;
+    background-color: transparent;
+    color: white;
+    letter-spacing: 1.5px;
+    transition: all 0.5s ease;
+}
+
+/*******
+Inputs 
+********/
+input[type=text] {
+    width: 80px;
+    padding: 5px 5px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    background-color: rgba(22, 27, 34, .35);
+    color: white;
+    font-size: 1.2em;
+    border: solid;
+    border-color: transparent;
+    border-radius: 5px;
+}
+
+input[type=text]:focus {
+    border-color: #009ca9;
+    background-color: rgba(22, 27, 34, .7);
+    outline: none;
+}
+
+/*******************************
+Div représetant le  listing csv 
+ *******************************/
 .box {
-    width: 400px;
+    width: 50%;
     border-bottom: 20px solid #17242c;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
@@ -36,7 +145,6 @@ body {
 }
 
 .box ul {
-    /* position: relative; */
     background: #1a2935;
     margin: -20px 0 0px 0;
 }
@@ -84,7 +192,9 @@ body {
     color: #009ca9;
 }
 
-/* link color */
+/******************
+Gestion des liens
+ ******************/
 a {
     text-decoration: none;
     font-size: 15px;
@@ -111,11 +221,3 @@ a:hover {
 a:active {
     color: #0fa1b8;
 }
-
-/* color :
-
-	#1a2935 -> bg card
-	#17242c -> bg title card
-	#00ad71 -> bg button 1
-	#009ca9 -> bg button 2
-	#e7ebf0 -> text */

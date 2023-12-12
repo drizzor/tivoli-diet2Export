@@ -248,7 +248,7 @@ class CSVCreator
     */
     public function getCSVUrl() : void 
     {
-        echo "<div>Télécharger le CSV : <a href='".$this->_destinationPath.$this->_filename."'>". $this->_filename."</a></div>";
+        echo "<span>Télécharger le CSV : <a href='".$this->_destinationPath.$this->_filename."'>". $this->_filename."</a></span";
     }
 
     /**
@@ -298,7 +298,7 @@ class CSVCreator
     * @param $data contient les fichiers existants ainsi que leur localisation
     * @param $max nombre maximum de fichier autorisé
     */
-    private function cleanCsvList(array $data, int $max = 5) : array 
+    private function cleanCsvList(array $data, int $max = 20) : array 
     {
         if(count($data) > $max) {
             unlink(end($data)['path']);
