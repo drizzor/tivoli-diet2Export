@@ -1,10 +1,17 @@
+<!DOCTYPE html>
 <?php
-$json = $dataToExport = [];
+require_once('app/bootstrap.php');
 
-$json = getAllSpecnoteId();
-$dataToExport = filterData($json);
-createCSV($dataToExport);
+if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if($file->uploadFile('uploadCSV')) {
+        $createCSV->setDataSourcePath($file->getDir().$file->getUploadName());
+        $createCSV->create("year");
+        $file->deleteUploaded();
+    } 
+} 
+?>
 
+<<<<<<< HEAD
 // print_r(count($json[8]->interv_CHKLIST));
 // echo "<hr><br><br>";
 // print_r($json[8]);
@@ -32,33 +39,54 @@ function getMyText(string $comboName, $value) : string {
         if ($value == 13) return 'Dagopname/Hôpital de jour';
         return '';
     }
+=======
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="public/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;400&display=swap" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <title>Diet Export</title>
+</head>
+<body>
+    <div class="container">
+        <div class="child-container">
+            <div class="form-title"><h2>Extraction équipes nutritionnelles et Plan Cancer</h2></div>
+            <div class="form-card">
+                
+                <p>Extraction valable uniquement pour la note <b>Diagnostic de l'état nutritionnel adulte</b>. <br/>
+                Le fichier CSV doit contenir uniquement une colonne de specnote ID. Ceux ne correspondant pas à la note seront ignoré.</p>
+>>>>>>> 07-adding-console-msg-for-pat-test-found
 
-    if($comboName == 'projet_RADLIST') {
-        if ($value == 1) return 'Nutritionteam/Equipes nutritionnelles';
-        if ($value == 2) return 'kankerplan/Plan Cancer';
-        return '';
-    }
+                <form action="index.php" method="POST" enctype="multipart/form-data">
+                    <label for="year">Année souhaitée:</label>
+                    <input type="text" name="year" id="year" value="<?= date('Y') ?>"><br>
 
-    if($comboName == 'delai_RADLIST') {
-        if ($value == 1) return 'nee/non';
-        if ($value == 2) return 'ja/oui < 48h';
-        if ($value == 3) return 'ja/oui > 48h';
-        return '';
-    }
-        
-    if($comboName == 'risque_RADLIST') {
-        if ($value == 1) return 'ja/oui';
-        if ($value == 2) return 'nee/non';
-        return '';
-    }
+                    <label for="uploadCSV">Upload du CSV:</label>
+                    <input type="file" name="uploadCSV" id="uploadCSV"><br>
+                    <button class="btn" type="submit">Générer le CSV</button>
+                    <?php if($createCSV->getAllOK() and $file->getAllOK()) $createCSV->getCSVUrl(); ?>
+                </form>
+            </div>
+            <?php if($createCSV->getErrorMessage()): ?>
+                <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$createCSV->getErrorMessage()?></div>
+            <?php endif; ?>    
+            <?php if($file->getMessage()): ?>
+                <div class="error"><i class="fa-solid fa-circle-exclamation"></i><?=$file->getMessage()?></div>
+            <?php endif; ?> 
+        </div>
 
-    if($comboName == 'evalnutri_RADLIST') {
-        if ($value == 1) return 'geen herscreening/ pas de réévaluation';
-        if ($value == 2) return 'ja met risico/ oui avec risque';
-        if ($value == 3) return 'ja zonder risico/ oui sans risque';
-        return '';
-    }
+        <div class="child-container">
+            <?= $createCSV->getAllCSV(); ?>
+        </div>
+    </div>
+</body>
+</html>
 
+<<<<<<< HEAD
     if($comboName == 'prise_RADLIST') {
         if ($value == 1) return "geen nutritionele interventie uitgevoerd/pas d'intervention nutritionnelle réalisée";
         if ($value == 2) return 'diëtist/diététicien';
@@ -228,3 +256,5 @@ function createCSV($data) {
 
     fclose($fp);
 }
+=======
+>>>>>>> 07-adding-console-msg-for-pat-test-found

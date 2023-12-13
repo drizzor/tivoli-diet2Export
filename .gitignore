@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 TODO.txt
 csv/export/*.csv
+=======
+public/csv/export/*.csv
+public/csv/specnoteid/*.csv
+>>>>>>> 07-adding-console-msg-for-pat-test-found
 *.csv
