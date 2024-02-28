@@ -92,7 +92,7 @@ class CSVCreator
                 }
                 elseif((!isset($json[$i]->noteInfosWs->specNoteId)) or 
                 (isset($json[$i]->noteInfosWs->noteName) and 
-                $json[$i]->noteInfosWs->noteName !== "Diagnostic de l'état nutritionnel adulte")) 
+                $json[$i]->noteInfosWs->noteName !== "Note globale d'hospitalisation")) 
                     $y--;
                 else $this->_json[$y] = $json[$i];
             } 
