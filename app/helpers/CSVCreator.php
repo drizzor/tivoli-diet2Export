@@ -1,4 +1,5 @@
 <?php
+
 /**
 * Classe permettant la création des fichiers CSV
 */
@@ -23,6 +24,8 @@ class CSVCreator
     */
     public function create(string $year) : void
     {
+        waitingScreen();
+        
         $this->_year = trim(htmlspecialchars($_POST[$year]));
         $this->fillAllId($this->_dataSourcePath);
         $this->filterData();
@@ -55,9 +58,12 @@ class CSVCreator
             foreach($this->_dataToExport as $row){fputcsv($fp, $row);}
             fclose($fp);
             $this->setAllOK(true);
+            
         } else 
             $this->_setErrorMessage("Aucune données trouvées sur base des informations envoyées. Vérifier le CSV uploadé et/ou l'année ('".$this->_year."' envoyé).");
-    }
+            
+            echo "<script>document.getElementById('waiting-screen').remove();</script>";
+        }
 
     /**
     * Récupère dans un tableau l'ensemble des specnoteid
@@ -80,9 +86,20 @@ class CSVCreator
     */
     private function fillAllData() : void
     {
+        // Configurations globales pour gérer l'exécution et l'affichage en temps réel
+        ob_implicit_flush(true);
+        while (ob_get_level() > 0) {
+            ob_end_flush();
+        }
+        // Pas de limite de temps d'exécution
+        ini_set('max_execution_time', 0); 
+
         try {
+            $startTime = time();
+            $count = count($this->_specnoteId);
+
             for ($i=$y=0; $i < count($this->_specnoteId); $i++,$y++) { 
-                $json[$i] = file_get_contents($this->_apiurl . $this->_specnoteId[$i][0]);        
+                $json[$i] = file_get_contents($this->_apiurl . $this->_specnoteId[$i][0]);  
                 $json[$i] = json_decode($json[$i]);
         
                 // ignoré se qui ne correspond pas à la note
@@ -95,6 +112,11 @@ class CSVCreator
                 $json[$i]->noteInfosWs->noteName !== "Note globale d'hospitalisation")) 
                     $y--;
                 else $this->_json[$y] = $json[$i];
+
+                if (time() - $startTime >= 10) {
+                    debug_to_console("Progression : $i/$count items traités.");
+                    $startTime = time(); // Réinitialiser le temps
+                }
             } 
         } catch (Exception $e) {
             throw new Exception('Erreur lors de la lecture du JSON : '.$e);
@@ -137,9 +159,9 @@ class CSVCreator
     * Anonymisation des données (checksum num dossier du patient)
     * @param string $patientNDOSM numéro dossier du patient anonymiser
     */
-    private function checkSumIdPat(string|int $patientNDOSM) : int
+    private function checkSumIdPat(string|int $patientNDOSM) : int | string
     {
-        return crc32($patientNDOSM);
+        return base64_encode($patientNDOSM);
     }
 
     /**

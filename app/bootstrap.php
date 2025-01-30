@@ -9,6 +9,6 @@ $csvName = "";
 $file = new Uploader();
 $createCSV = new CSVCreator();
 $file->setDir("public/csv/specnoteid/");
-$file->setMaxSize(.5);
+$file->setMaxSize(2);
 $file->setExtensions(array('csv'));
 $createCSV->setPath("public/csv/export/");

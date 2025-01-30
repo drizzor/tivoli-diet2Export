@@ -1,0 +1,13 @@
+{
+    "workbench.colorCustomizations": {
+        "[Dracula]": {
+            "editorCursor.background": "#ffff4d",
+            "editorCursor.foreground": "#ff4dca",
+            "editor.selectionBackground": "#4d4f9ce1",
+            "editor.selectionHighlightBackground": "#4438ec"
+        },
+        "activityBar.background": "#17198A",
+        "titleBar.activeBackground": "#2023C1",
+        "titleBar.activeForeground": "#FBFBFE"
+    }
+}
